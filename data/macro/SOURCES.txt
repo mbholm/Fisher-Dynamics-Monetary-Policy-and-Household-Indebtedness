@@ -1,0 +1,30 @@
+==== MP_Shocks: Documentation sheet ====
+This file contains series of monetary policy shocks for Norway based on the computations in:
+"The Transmission of Monetary Policy under the Microscope"
+by Martin Holm, Pascal Paul, and Andreas Tischbirek
+Journal of Political Economy
+Please cite the paper if you are using these shocks! Thank you very much.
+==== MP_decisions: Documentation sheet ====
+This file contains the dates of Monetary Policy Decisions by Norges Bank, as well as their associated changes in interest rates.
+Sources "Monetary Policy Decisions"
+Announcement dates and policy rates | Used as an initial list of policy announcement dates and interest rates
+Announcement decisions (dates and exact times) | Used to confirm dates of each press release
+Press releases | Used to add observations that are missing from initial list
+==== Macro Data: Documentation sheet ====
+Macro Data for Norway
+Annual Data
+Source | Seasonally adjusted | Convert to real units | Link
+Policy Rate (Sight Deposit Rate) | Norges Bank | https://www.norges-bank.no/en/topics/Statistics/Interest-rates/
+Real GDP | Fred St. Louis / OECD | https://fred.stlouisfed.org/series/NAEXKP01NOA189S
+CPI-AEL | Statistics Norway | https://www.ssb.no/en/statbank/table/05335/
+Real Gross Fixed Capital Formation | Statistics Norway | https://www.ssb.no/en/statbank/table/09189/
+Wages and Salaries (mainland) | Statistics Norway | x | https://www.ssb.no/en/statbank/table/09174/
+Registered Unemployment Rate | Fred St. Louis / OECD | https://fred.stlouisfed.org/series/LMUNRRTTNOA156N
+Quarterly Data
+Source | Seasonally adjusted | Convert to real units | Link
+Policy Rate (Sight Deposit Rate) | (Average of monthly series)
+Real GDP | Fred St. Louis / Eurostat | x | https://fred.stlouisfed.org/series/CLVMNACSCAB1GQNO
+CPI-AEL | (Average of monthly series)
+Real Gross Fixed Capital Formation | Statistics Norway | x | https://www.ssb.no/en/statbank/table/09190/
+Wages and Salaries (mainland) | Statistics Norway | x | x | https://www.ssb.no/en/statbank/table/09175/
+Registered Unemployment Rate | Fred St. Louis / OECD | x | https://fred.stlouisfed.org/series/LMUNRRTTNOQ156S

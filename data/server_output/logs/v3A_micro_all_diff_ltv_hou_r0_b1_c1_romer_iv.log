@@ -1,0 +1,160 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_micro_all_diff_ltv_hou_r0_b1_c1_romer_iv.log
+  log type:  text
+ opened on:   6 Oct 2026, 23:44:09
+
+. 
+. 
+. ********************************************************************************
+. * calculate log differences of dependent variable for each HH at horizons h=0,1,...,NN
+. 
+. 
+. forval j = 0/$NN  {
+  2.                 qui gen ${dependent_var}_d`j' = (f`j'.$dependent_var - l1.$dependent_var )
+  3.         }
+
+. 
+. 
+. g control_1 = (l1.$dependent_var - l2.$dependent_var )
+(14,861,668 missing values generated)
+
+. g control_2 = (l2.$dependent_var - l3.$dependent_var )
+(18,544,202 missing values generated)
+
+. 
+. cap drop balance
+
+. gen balance = 1
+
+. 
+. if ${balance}==1 {
+.         cap drop balance
+.         gen balance = ${dependent_var}_d0 != . & ${dependent_var}_d1 != . & ${dependent_var}_d2 != . & ${dependent_var}_d3 != . & ${dependent_var}_d4 != . & ${dependent_var}_d5 != .
+. }
+
+.                 
+. ********************************************************************************
+. * Local Projections
+. 
+. * make matrices ready
+. matrix res = J($NN+1,1,0)
+
+. matrix seRes = J($NN+1,1,0)
+
+. matrix NObs = J($NN+1,1,0)
+
+. 
+. forval j=0/$NN {
+  2.         
+.         if "${shock_name}"=="market" {
+  3.                 eststo: qui xtivreg2 ${dependent_var}_d`j' (d_ir_eoy = shock_l0) shock_l1 shock_l2 shock_l3 control_* $demogr_controls if DTI_jan_1st != . & balance == 1 & year >= 2001, fe dkraay($DK_lag)
+  4.         }
+  5.         else {
+  6.                 eststo: qui xtivreg2 ${dependent_var}_d`j' (d_ir_eoy = shock_l0) shock_l1 shock_l2 shock_l3 control_* $demogr_controls if DTI_jan_1st != . & balance == 1, fe dkraay($DK_lag)
+  7.         }
+  8.         
+.         
+.         di as text "horizon `j': first-stage F (Kleibergen-Paap rk Wald) = " %9.2f e(widstat) "   N = " e(N)
+  9. 
+.         *store results
+.         local jnum = `j'+1
+ 10.         matrix beta = e(b)
+ 11.         matrix res[`jnum',1] = beta[1,1]
+ 12.         mat VV = e(V)
+ 13.         matrix seRes[`jnum',1] = sqrt(VV[1,1])
+ 14.         matrix NObs[`jnum',1] = e(N)
+ 15.         
+. }
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+
+.         
+. * show estimates
+. if $show_output==1 {
+. esttab, se compress replace
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           ltv_hou~0    ltv_hou~1    ltv_hou~2    ltv_hou~3    ltv_hou~4    ltv_hou~5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -8.757        15.29        15.39        21.40        14.78        1.426   
+             (7.754)      (9.989)      (10.99)      (12.30)      (15.91)      (16.64)   
+
+shock_l1     0.00181      0.00482***   0.00687***   0.00691***   0.00399      0.00114   
+           (0.000954)    (0.00120)    (0.00163)    (0.00203)    (0.00243)    (0.00267)   
+
+shock_l2     0.00216      0.00627**    0.00668**    0.00468      0.00239      0.00131   
+           (0.00116)    (0.00208)    (0.00250)    (0.00308)    (0.00320)    (0.00331)   
+
+shock_l3     0.00259      0.00518**    0.00304      0.00172     0.000861      0.00215   
+           (0.00147)    (0.00157)    (0.00185)    (0.00224)    (0.00257)    (0.00312)   
+
+control_1     -0.275***    -0.372***    -0.431***    -0.468***    -0.492***    -0.507***
+            (0.0130)     (0.0160)     (0.0183)     (0.0224)     (0.0254)     (0.0242)   
+
+control_2     -0.140***    -0.210***    -0.253***    -0.281***    -0.298***    -0.308***
+           (0.00966)     (0.0159)     (0.0208)     (0.0249)     (0.0256)     (0.0237)   
+----------------------------------------------------------------------------------------
+N           12377239     12377239     12377239     12377239     12377239     12377239   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+. }
+
+. eststo clear
+
+. 
+. * delete log-differences
+. drop ${dependent_var}_d*
+
+. drop control_*
+
+. drop balance
+
+. 
+. 
+. ********************************************************************************
+. * Output estimates into excel file
+. 
+. putexcel set ${w5_tables}/${version}_micro_all_diff_${dependent_var}${sample}_r${robust}_b${balance}_c${csample}_${shock_name}_iv.xlsx, replace
+note: file will be replaced when the first putexcel command is issued.
+
+. * first column contains point estimates (for h=0,1,...,NN)
+. putexcel A1 = matrix(res)
+file <output folder>/v3A_micro_all_diff_ltv_hou_r0_b1_c1_romer_iv.xlsx saved
+
+. * second column contains standard errors        
+. putexcel B1 = matrix(seRes)
+file <output folder>/v3A_micro_all_diff_ltv_hou_r0_b1_c1_romer_iv.xlsx saved
+
+. * third column contains sample size
+. putexcel C1 = matrix(NObs)
+file <output folder>/v3A_micro_all_diff_ltv_hou_r0_b1_c1_romer_iv.xlsx saved
+
+. 
+. * same estimates as comma-separated text (columns: estimate, standard error, observations)
+. write_lp_csv "${w5_tables}/${version}_micro_all_diff_${dependent_var}${sample}_r${robust}_b${balance}_c${csample}_${shock_name}_iv.csv"
+(file <output folder>/v3A_micro_all_diff_ltv_hou_r0_b1_c1_romer_iv.csv not found)
+
+.         
+. 
+. ********************************************************************************
+. * close log file
+. 
+. log close
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_micro_all_diff_ltv_hou_r0_b1_c1_romer_iv.log
+  log type:  text
+ closed on:   7 Oct 2026, 00:55:01
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

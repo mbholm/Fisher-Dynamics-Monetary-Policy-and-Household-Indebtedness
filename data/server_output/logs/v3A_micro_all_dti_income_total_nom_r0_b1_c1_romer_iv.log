@@ -1,0 +1,169 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_micro_all_dti_income_total_nom_r0_b1_c1_romer_iv.log
+  log type:  text
+ opened on:   6 Oct 2026, 00:12:40
+
+. 
+. 
+. ********************************************************************************
+. * calculate log differences of dependent variable for each HH at horizons h=0,1,...,NN
+. 
+. * generate average
+. tsset lnr year
+
+Panel variable: lnr (unbalanced)
+ Time variable: year, 1995 to 2015, but with gaps
+         Delta: 1 unit
+
+. 
+. forval j = 0/$NN  {
+  2.         qui gen ${dependent_var}_d`j' = (f`j'.debt_nom/f`j'.income_total_nom)*((f`j'.$dependent_var  - l1.$dependent_var )/abs(l1.income_total_nom))
+  3.         }
+
+. 
+. 
+. * generate control vars
+. g control_1 = (l.debt_nom/l.income_total_nom)*((l1.$dependent_var - l2.$dependent_var )/abs(l2.income_total_nom))
+(14,861,668 missing values generated)
+
+. g control_2 = (l2.debt_nom/l2.income_total_nom)*((l2.$dependent_var - l3.$dependent_var )/abs(l3.income_total_nom))
+(18,544,202 missing values generated)
+
+. 
+. cap drop balance
+
+. gen balance = 1
+
+. 
+. if ${balance}==1 {
+.         cap drop balance
+.         gen balance = ${dependent_var}_d0 != . & ${dependent_var}_d1 != . & ${dependent_var}_d2 != . & ${dependent_var}_d3 != . & ${dependent_var}_d4 != . & ${dependent_var}_d5 != .
+. }
+
+.                 
+. ********************************************************************************
+. * Local Projections
+. 
+. * make matrices ready
+. matrix res = J($NN+1,1,0)
+
+. matrix seRes = J($NN+1,1,0)
+
+. matrix NObs = J($NN+1,1,0)
+
+. 
+. forval j=0/$NN {
+  2.         
+.         if "${shock_name}" == "market" {
+  3.         eststo: qui xtivreg2 ${dependent_var}_d`j' (d_ir_eoy = shock_l0) shock_l1 shock_l2 shock_l3 control_* $demogr_controls if DTI_jan_1st != . & balance == 1 & year >= 2001, fe 
+> dkraay($DK_lag)
+  4.         }
+  5.         else {
+  6.         eststo: qui xtivreg2 ${dependent_var}_d`j' (d_ir_eoy = shock_l0) shock_l1 shock_l2 shock_l3 control_* $demogr_controls if DTI_jan_1st != . & balance == 1, fe dkraay($DK_lag)
+  7.         }
+  8.         
+.         
+. 
+.         di as text "horizon `j': first-stage F (Kleibergen-Paap rk Wald) = " %9.2f e(widstat) "   N = " e(N)
+  9. 
+.         *store results
+.         local jnum = `j'+1
+ 10.         matrix beta = e(b)
+ 11.         matrix res[`jnum',1] = beta[1,1]
+ 12.         mat VV = e(V)
+ 13.         matrix seRes[`jnum',1] = sqrt(VV[1,1])
+ 14.         matrix NObs[`jnum',1] = e(N)
+ 15.         
+. }
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     14.27   N = 12377239
+
+.         
+. * show estimates
+. if $show_output==1 {
+. esttab, se compress replace
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           income_~0    income~d1    income~d2    income~d3    income~d4    income~d5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -9.310       -33.05       -28.82       -78.20       -84.41       -127.9   
+             (16.01)      (16.88)      (37.24)      (57.06)      (71.39)      (87.64)   
+
+shock_l1    -0.00569*    -0.00398     -0.00468     -0.00902      -0.0144      -0.0251*  
+           (0.00274)    (0.00328)    (0.00596)    (0.00708)    (0.00945)     (0.0123)   
+
+shock_l2     0.00120     0.000786      0.00107     -0.00653      -0.0148      -0.0166   
+           (0.00223)    (0.00192)    (0.00327)    (0.00585)    (0.00840)     (0.0112)   
+
+shock_l3     0.00164     0.000607     -0.00243      -0.0146      -0.0138      -0.0163   
+           (0.00188)    (0.00179)    (0.00580)    (0.00817)    (0.00983)     (0.0118)   
+
+control_1     -0.295***    -0.442***    -0.527***    -0.574***    -0.612***    -0.640***
+            (0.0315)     (0.0362)     (0.0326)     (0.0302)     (0.0273)     (0.0283)   
+
+control_2     -0.192***    -0.278***    -0.333***    -0.362***    -0.383***    -0.401***
+            (0.0201)     (0.0262)     (0.0283)     (0.0268)     (0.0274)     (0.0267)   
+----------------------------------------------------------------------------------------
+N           12377239     12377239     12377239     12377239     12377239     12377239   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+. }
+
+. eststo clear
+
+. 
+. * delete log-differences
+. drop ${dependent_var}_d*
+
+. drop control_*
+
+. drop balance
+
+. 
+. ********************************************************************************
+. * Output estimates into excel file
+. 
+. putexcel set ${w5_tables}/${version}_micro_all_dti_${dependent_var}${sample}_r${robust}_b${balance}_c${csample}_${shock_name}_iv.xlsx, replace
+note: file will be replaced when the first putexcel command is issued.
+
+. * first column contains point estimates (for h=0,1,...,NN)
+. putexcel A1 = matrix(res)
+file <output folder>/v3A_micro_all_dti_income_total_nom_r0_b1_c1_romer_iv.xlsx saved
+
+. * second column contains standard errors        
+. putexcel B1 = matrix(seRes)
+file <output folder>/v3A_micro_all_dti_income_total_nom_r0_b1_c1_romer_iv.xlsx saved
+
+. * third column contains sample size
+. putexcel C1 = matrix(NObs)
+file <output folder>/v3A_micro_all_dti_income_total_nom_r0_b1_c1_romer_iv.xlsx saved
+
+. 
+. * same estimates as comma-separated text (columns: estimate, standard error, observations)
+. write_lp_csv "${w5_tables}/${version}_micro_all_dti_${dependent_var}${sample}_r${robust}_b${balance}_c${csample}_${shock_name}_iv.csv"
+(file <output folder>/v3A_micro_all_dti_income_total_nom_r0_b1_c1_romer_iv.csv not found)
+
+.         
+. 
+. ********************************************************************************
+. * close log file
+. 
+. log close
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_micro_all_dti_income_total_nom_r0_b1_c1_romer_iv.log
+  log type:  text
+ closed on:   6 Oct 2026, 01:51:07
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

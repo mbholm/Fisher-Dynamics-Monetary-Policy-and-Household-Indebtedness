@@ -1,0 +1,344 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_micro_LIQSUBgroups_diff_deb_inc_r0_b1_c1_romer_iv.log
+  log type:  text
+ opened on:   6 Oct 2026, 21:20:04
+
+. 
+. 
+. ********************************************************************************
+. * calculate log differences of dependent variable for each HH at horizons h=0,1,...,NN
+. 
+. 
+. * generate average
+. tsset lnr year
+
+Panel variable: lnr (unbalanced)
+ Time variable: year, 1995 to 2015, but with gaps
+         Delta: 1 unit
+
+. 
+. forval j = 0/$NN  {
+  2.         qui gen ${dependent_var}_d`j' = (f`j'.${dependent_var} - l1.${dependent_var})
+  3.         }
+
+. 
+. 
+. * generate control vars
+. g control_1 = (l1.${dependent_var}- l2.${dependent_var}) 
+(14,861,668 missing values generated)
+
+. g control_2 = (l2.${dependent_var} - l3.${dependent_var})
+(18,544,202 missing values generated)
+
+. 
+. cap drop balance
+
+. gen balance = 1
+
+. 
+. if ${balance}==1 {
+.         cap drop balance
+.         gen balance = ${dependent_var}_d0 != . & ${dependent_var}_d1 != . & ${dependent_var}_d2 != . & ${dependent_var}_d3 != . & ${dependent_var}_d4 != . & ${dependent_var}_d5 != .
+. }
+
+.         
+. ********************************************************************************
+. * Local Projections
+. 
+. * calculate number of groups used
+. qui su group, meanonly 
+
+. local group_nb = r(max)         
+
+.                 
+. * make matrices ready
+. matrix res = J(($NN+1)*`group_nb',1,0)
+
+. matrix seRes = J(($NN+1)*`group_nb',1,0)
+
+. matrix NObs = J(($NN+1)*`group_nb',1,0)         
+
+. *gen sample = ${dependent_var}_d0 != . & ${dependent_var}_d1 != . & ${dependent_var}_d2 != . & ${dependent_var}_d3 != . & ${dependent_var}_d4 != . & ${dependent_var}_d5 != .
+.                                 
+. forval kk=1/`group_nb' {
+  2. preserve
+  3. keep if group == `kk'
+  4. 
+. forval j=0/$NN {
+  5. 
+. 
+. 
+.         
+.         if "${shock_name}"=="market" {
+  6.                 eststo: qui xtivreg2 ${dependent_var}_d`j' (d_ir_eoy = shock_l0) shock_l1 shock_l2 shock_l3 control_* $demogr_controls if group == `kk' & DTI_jan_1st != . & balance == 1 & year >= 2001, fe dkraay
+> ($DK_lag)
+  7.         }
+  8.         else {
+  9.                 eststo: qui xtivreg2 ${dependent_var}_d`j' (d_ir_eoy = shock_l0) shock_l1 shock_l2 shock_l3 control_* $demogr_controls if group == `kk' & DTI_jan_1st != . & balance == 1, fe dkraay($DK_lag)
+ 10.         }
+ 11.         
+.         
+.         
+.         di as text "horizon `j': first-stage F (Kleibergen-Paap rk Wald) = " %9.2f e(widstat) "   N = " e(N)
+ 12. 
+.         *store results
+.         local jnum = `j'+1
+ 13.         matrix beta = e(b)
+ 14.         matrix res[(`kk'-1)*($NN+1)+`jnum',1] = beta[1,1]
+ 15.         mat VV = e(V)
+ 16.         matrix seRes[(`kk'-1)*($NN+1)+`jnum',1] = sqrt(VV[1,1])
+ 17.         matrix NObs[(`kk'-1)*($NN+1)+`jnum',1] = e(N)
+ 18.         
+.         }
+ 19.         
+.         * show estimates
+.         if $show_output==1 {
+ 20.         esttab, se compress replace
+ 21.         }
+ 22.         eststo clear
+ 23.         
+. restore
+ 24. }
+(41,124,260 observations deleted)
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     15.65   N = 1723724
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     15.65   N = 1723724
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     15.65   N = 1723724
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     15.65   N = 1723724
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     15.65   N = 1723724
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     15.65   N = 1723724
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           deb_inc~0    deb_inc~1    deb_inc~2    deb_inc~3    deb_inc~4    deb_inc~5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -32.70        0.256       -77.17       -67.20*      -159.1**     -60.58   
+             (41.67)      (42.26)      (48.39)      (29.36)      (53.05)      (68.51)   
+
+shock_l1      0.0120      0.00462     -0.00855      -0.0171***   -0.0145*      0.0167*  
+           (0.00648)    (0.00758)    (0.00746)    (0.00416)    (0.00577)    (0.00824)   
+
+shock_l2    -0.00594      -0.0109      -0.0231**    -0.0126*     0.00512       0.0122   
+           (0.00591)    (0.00729)    (0.00801)    (0.00625)    (0.00696)     (0.0116)   
+
+shock_l3     -0.0115      -0.0186**    -0.0192*     0.00570     -0.00261      0.00217   
+           (0.00688)    (0.00660)    (0.00775)    (0.00363)    (0.00798)    (0.00910)   
+
+control_1     -0.209***    -0.363***    -0.453***    -0.498***    -0.527***    -0.537***
+            (0.0182)     (0.0257)     (0.0243)     (0.0256)     (0.0236)     (0.0242)   
+
+control_2     -0.178***    -0.276***    -0.333***    -0.367***    -0.383***    -0.390***
+            (0.0116)     (0.0166)     (0.0150)     (0.0131)     (0.0131)     (0.0116)   
+----------------------------------------------------------------------------------------
+N            1723724      1723724      1723724      1723724      1723724      1723724   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+(41,124,271 observations deleted)
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     15.69   N = 2182189
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     15.69   N = 2182189
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     15.69   N = 2182189
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     15.69   N = 2182189
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     15.69   N = 2182189
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     15.69   N = 2182189
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           deb_inc~0    deb_inc~1    deb_inc~2    deb_inc~3    deb_inc~4    deb_inc~5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -29.79       -22.36       -84.17       -85.01*      -147.9**     -61.01   
+             (28.24)      (45.70)      (54.67)      (42.88)      (51.67)      (58.80)   
+
+shock_l1     0.00704     -0.00136      -0.0124      -0.0173**    -0.0119*      0.0111   
+           (0.00638)    (0.00775)    (0.00769)    (0.00551)    (0.00580)    (0.00811)   
+
+shock_l2    -0.00574      -0.0105      -0.0182     -0.00600      0.00756       0.0122   
+           (0.00631)    (0.00774)    (0.00941)    (0.00886)    (0.00955)     (0.0137)   
+
+shock_l3    -0.00756      -0.0120     -0.00742       0.0114      0.00496      0.00668   
+           (0.00444)    (0.00664)     (0.0105)    (0.00778)     (0.0104)    (0.00971)   
+
+control_1     -0.184***    -0.309***    -0.393***    -0.435***    -0.464***    -0.479***
+            (0.0148)     (0.0234)     (0.0250)     (0.0253)     (0.0247)     (0.0248)   
+
+control_2     -0.143***    -0.224***    -0.275***    -0.303***    -0.321***    -0.332***
+            (0.0113)     (0.0168)     (0.0167)     (0.0185)     (0.0188)     (0.0167)   
+----------------------------------------------------------------------------------------
+N            2182189      2182189      2182189      2182189      2182189      2182189   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+(41,124,274 observations deleted)
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     15.33   N = 2539647
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     15.33   N = 2539647
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     15.33   N = 2539647
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     15.33   N = 2539647
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     15.33   N = 2539647
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     15.33   N = 2539647
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           deb_inc~0    deb_inc~1    deb_inc~2    deb_inc~3    deb_inc~4    deb_inc~5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -27.23       -46.77       -96.74       -97.53       -106.3       -25.59   
+             (27.99)      (54.11)      (66.92)      (67.53)      (64.52)      (56.70)   
+
+shock_l1     0.00102     -0.00810      -0.0148      -0.0144     -0.00548       0.0106   
+           (0.00655)    (0.00858)     (0.0101)    (0.00966)    (0.00919)     (0.0101)   
+
+shock_l2    -0.00612     -0.00961      -0.0108    -0.0000138       0.0102       0.0145   
+           (0.00640)     (0.0101)     (0.0124)     (0.0135)     (0.0150)     (0.0174)   
+
+shock_l3    -0.00457     -0.00499     0.000903       0.0125      0.00989       0.0125   
+           (0.00569)     (0.0110)     (0.0152)     (0.0158)     (0.0173)     (0.0158)   
+
+control_1     -0.165***    -0.272***    -0.344***    -0.392***    -0.421***    -0.440***
+            (0.0140)     (0.0221)     (0.0249)     (0.0272)     (0.0289)     (0.0277)   
+
+control_2     -0.121***    -0.189***    -0.236***    -0.268***    -0.286***    -0.297***
+            (0.0116)     (0.0189)     (0.0212)     (0.0227)     (0.0234)     (0.0214)   
+----------------------------------------------------------------------------------------
+N            2539647      2539647      2539647      2539647      2539647      2539647   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+(41,124,273 observations deleted)
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     14.99   N = 2577773
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     14.99   N = 2577773
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     14.99   N = 2577773
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     14.99   N = 2577773
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     14.99   N = 2577773
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     14.99   N = 2577773
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           deb_inc~0    deb_inc~1    deb_inc~2    deb_inc~3    deb_inc~4    deb_inc~5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -33.62       -65.29       -107.8       -110.1       -85.07       -15.28   
+             (32.68)      (59.02)      (72.51)      (74.51)      (69.27)      (62.76)   
+
+shock_l1    -0.00305      -0.0123      -0.0181      -0.0148     -0.00345      0.00952   
+           (0.00653)    (0.00928)     (0.0111)     (0.0108)     (0.0106)     (0.0119)   
+
+shock_l2    -0.00571     -0.00904     -0.00763      0.00230       0.0116       0.0162   
+           (0.00742)     (0.0118)     (0.0141)     (0.0156)     (0.0175)     (0.0191)   
+
+shock_l3    -0.00387     -0.00286      0.00328       0.0108       0.0112       0.0126   
+           (0.00707)     (0.0127)     (0.0164)     (0.0179)     (0.0189)     (0.0177)   
+
+control_1     -0.169***    -0.277***    -0.346***    -0.394***    -0.428***    -0.444***
+            (0.0150)     (0.0243)     (0.0278)     (0.0297)     (0.0307)     (0.0298)   
+
+control_2     -0.121***    -0.189***    -0.237***    -0.270***    -0.291***    -0.303***
+            (0.0139)     (0.0214)     (0.0244)     (0.0259)     (0.0261)     (0.0244)   
+----------------------------------------------------------------------------------------
+N            2577773      2577773      2577773      2577773      2577773      2577773   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+(41,124,291 observations deleted)
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     14.33   N = 2410799
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     14.33   N = 2410799
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     14.33   N = 2410799
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     14.33   N = 2410799
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     14.33   N = 2410799
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     14.33   N = 2410799
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           deb_inc~0    deb_inc~1    deb_inc~2    deb_inc~3    deb_inc~4    deb_inc~5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -45.12       -102.0       -151.2*      -152.9       -96.07       -26.93   
+             (32.75)      (53.51)      (70.68)      (78.49)      (74.47)      (64.65)   
+
+shock_l1    -0.00853      -0.0210**    -0.0256**    -0.0189     -0.00475      0.00533   
+           (0.00544)    (0.00767)    (0.00980)    (0.00998)     (0.0119)     (0.0138)   
+
+shock_l2    -0.00871      -0.0129     -0.00805      0.00188       0.0102       0.0154   
+           (0.00823)     (0.0130)     (0.0151)     (0.0177)     (0.0208)     (0.0215)   
+
+shock_l3    -0.00566     -0.00289      0.00330      0.00738       0.0108       0.0137   
+           (0.00817)     (0.0131)     (0.0166)     (0.0192)     (0.0200)     (0.0182)   
+
+control_1     -0.194***    -0.305***    -0.374***    -0.422***    -0.459***    -0.480***
+            (0.0204)     (0.0294)     (0.0324)     (0.0343)     (0.0349)     (0.0337)   
+
+control_2     -0.130***    -0.205***    -0.256***    -0.294***    -0.318***    -0.335***
+            (0.0177)     (0.0265)     (0.0309)     (0.0335)     (0.0339)     (0.0315)   
+----------------------------------------------------------------------------------------
+N            2410799      2410799      2410799      2410799      2410799      2410799   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+
+. 
+. * delete log-differences
+. drop ${dependent_var}_d* control_*
+
+. drop balance
+
+.         
+. ********************************************************************************
+. * output estimates into excel file      
+. 
+. putexcel set ${w5_tables}/${version}_micro_${group_type}groups_diff_${dependent_var}${sample}_r${robust}_b${balance}_c${csample}_${shock_name}_iv.xlsx, replace
+note: file will be replaced when the first putexcel command is issued.
+
+. * first column contains point estimates (for h=0,1,...,NN)
+. putexcel A1 = matrix(res)
+file <output folder>/v3A_micro_LIQSUBgroups_diff_deb_inc_r0_b1_c1_romer_iv.xlsx saved
+
+. * second column contains standard errors        
+. putexcel B1 = matrix(seRes)
+file <output folder>/v3A_micro_LIQSUBgroups_diff_deb_inc_r0_b1_c1_romer_iv.xlsx saved
+
+. * third column contains sample size
+. putexcel C1 = matrix(NObs)
+file <output folder>/v3A_micro_LIQSUBgroups_diff_deb_inc_r0_b1_c1_romer_iv.xlsx saved
+
+. 
+. * same estimates as comma-separated text (columns: estimate, standard error, observations)
+. write_lp_csv "${w5_tables}/${version}_micro_${group_type}groups_diff_${dependent_var}${sample}_r${robust}_b${balance}_c${csample}_${shock_name}_iv.csv"
+(file <output folder>/v3A_micro_LIQSUBgroups_diff_deb_inc_r0_b1_c1_romer_iv.csv not found)
+
+. 
+. 
+. ********************************************************************************
+. * close log file
+. 
+. log close
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_micro_LIQSUBgroups_diff_deb_inc_r0_b1_c1_romer_iv.log
+  log type:  text
+ closed on:   6 Oct 2026, 22:15:40
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

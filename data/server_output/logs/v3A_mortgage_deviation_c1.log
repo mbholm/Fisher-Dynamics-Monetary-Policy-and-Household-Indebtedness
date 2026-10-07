@@ -1,0 +1,72 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_mortgage_deviation_c1.log
+  log type:  text
+ opened on:   6 Oct 2026, 15:48:49
+
+. 
+. clear
+
+. u lnr year time deviate sample2 sample_C1 using ${w5_data}/households_cpi_9315${sample}
+
+. 
+. keep if sample2 == 1
+(13,972,907 observations deleted)
+
+. keep if sample_C1 == 1
+(2,823,751 observations deleted)
+
+. 
+. keep if deviate != .
+(48,471,506 observations deleted)
+
+. bys time: egen meanDev = mean(deviate)
+
+. bys time: keep if _n == 1
+(138,178 observations deleted)
+
+. 
+. list time meanDev
+
+     +-----------------+
+     | time    meanDev |
+     |-----------------|
+  1. |    0          0 |
+  2. |    1   .2143431 |
+  3. |    2   .5580308 |
+  4. |    3   .6940733 |
+  5. |    4    .792492 |
+     |-----------------|
+  6. |    5   .8664306 |
+  7. |    6   .9052632 |
+  8. |    7   .9313655 |
+  9. |    8   .9513915 |
+ 10. |    9   .9528598 |
+     |-----------------|
+ 11. |   10    .960961 |
+ 12. |   11   .9775281 |
+ 13. |   12   .9822222 |
+ 14. |   13   .9567901 |
+ 15. |   14   .9868421 |
+     |-----------------|
+ 16. |   15   .9832402 |
+ 17. |   16          1 |
+ 18. |   17          1 |
+ 19. |   18    .983871 |
+ 20. |   19    .972973 |
+     |-----------------|
+ 21. |   20          1 |
+ 22. |   21          1 |
+     +-----------------+
+
+. 
+. outsheet time meanDev using ${w5_tables}/mortgage_deviation.csv, c replace
+(file <output folder>/mortgage_deviation.csv not found)
+
+. 
+. log close
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_mortgage_deviation_c1.log
+  log type:  text
+ closed on:   6 Oct 2026, 15:49:18
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

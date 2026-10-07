@@ -1,0 +1,262 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_micro_DTI622groups_dti_income_total_nom_r0_b1_c1_romer_iv.log
+  log type:  text
+ opened on:   6 Oct 2026, 14:20:27
+
+. 
+. 
+. ********************************************************************************
+. * calculate log differences of dependent variable for each HH at horizons h=0,1,...,NN
+. 
+. * generate average
+. tsset lnr year
+
+Panel variable: lnr (unbalanced)
+ Time variable: year, 1995 to 2015, but with gaps
+         Delta: 1 unit
+
+. 
+. forval j = 0/$NN  {
+  2.         qui gen ${dependent_var}_d`j' = (f`j'.debt_nom/f`j'.income_total_nom)*((f`j'.$dependent_var  - l1.$dependent_var )/(l1.income_total_nom))
+  3.         }
+
+. 
+. 
+. * generate control vars
+. g control_1 = (l.debt_nom/l.income_total_nom)*((l1.$dependent_var - l2.$dependent_var )/abs(l2.income_total_nom))
+(14,861,668 missing values generated)
+
+. g control_2 = (l2.debt_nom/l2.income_total_nom)*((l2.$dependent_var - l3.$dependent_var )/abs(l3.income_total_nom))
+(18,544,202 missing values generated)
+
+. 
+. cap drop balance
+
+. gen balance = 1
+
+. 
+. if ${balance}==1 {
+.         cap drop balance
+.         gen balance = ${dependent_var}_d0 != . & ${dependent_var}_d1 != . & ${dependent_var}_d2 != . & ${dependent_var}_d3 != . & ${dependent_var}_d4 != . & ${dependent_var}_d5 != .
+. }
+
+.                                 
+. ********************************************************************************
+. * Local Projections
+. 
+. * calculate number of groups used
+. qui su group, meanonly 
+
+. local group_nb = r(max)         
+
+.                 
+. * make matrices ready
+. matrix res = J(($NN+1)*`group_nb',1,0)
+
+. matrix seRes = J(($NN+1)*`group_nb',1,0)
+
+. matrix NObs = J(($NN+1)*`group_nb',1,0)         
+
+.                                 
+. forval kk=1/`group_nb' {
+  2. preserve
+  3. keep if group == `kk'
+  4. 
+. 
+. forval j=0/$NN {
+  5. 
+. 
+.         if "${shock_name}"=="market" {
+  6.                 eststo: qui xtivreg2 ${dependent_var}_d`j' (d_ir_eoy = shock_l0) shock_l1 shock_l2 shock_l3 control_* $demogr_controls if group == `kk' & DTI_jan_1st != . & balance 
+> == 1 & year >= 2001, fe dkraay($DK_lag)
+  7.         }
+  8.         else {
+  9.                 eststo: qui xtivreg2 ${dependent_var}_d`j' (d_ir_eoy = shock_l0) shock_l1 shock_l2 shock_l3 control_* $demogr_controls if group == `kk' & DTI_jan_1st != . & balance 
+> == 1, fe dkraay($DK_lag)
+ 10.         }
+ 11.         
+.         di as text "horizon `j': first-stage F (Kleibergen-Paap rk Wald) = " %9.2f e(widstat) "   N = " e(N)
+ 12. 
+.         *store results
+.         local jnum = `j'+1
+ 13.         matrix beta = e(b)
+ 14.         matrix res[(`kk'-1)*($NN+1)+`jnum',1] = beta[1,1]
+ 15.         mat VV = e(V)
+ 16.         matrix seRes[(`kk'-1)*($NN+1)+`jnum',1] = sqrt(VV[1,1])
+ 17.         matrix NObs[(`kk'-1)*($NN+1)+`jnum',1] = e(N)
+ 18.         
+.         }
+ 19.         
+.         * show estimates
+.         if $show_output==1 {
+ 20.         esttab, se compress replace
+ 21.         }
+ 22.         eststo clear
+ 23. 
+.         restore
+ 24. }
+(19,443,862 observations deleted)
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     14.58   N = 7976426
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     14.58   N = 7976426
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     14.58   N = 7976426
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     14.58   N = 7976426
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     14.58   N = 7976426
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     14.58   N = 7976426
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           income_~0    income~d1    income~d2    income~d3    income~d4    income~d5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -0.593        1.113       -7.156       -26.56       -43.66*      -53.46   
+             (6.030)      (8.185)      (11.02)      (16.30)      (21.71)      (28.41)   
+
+shock_l1    0.000786     0.000977     -0.00132     -0.00488**   -0.00731**   -0.00829*  
+           (0.000876)    (0.000921)    (0.00151)    (0.00174)    (0.00250)    (0.00346)   
+
+shock_l2   -0.0000301     -0.00121     -0.00374***  -0.00606***  -0.00730**   -0.00752*  
+           (0.000665)    (0.000754)    (0.000801)    (0.00164)    (0.00225)    (0.00331)   
+
+shock_l3    -0.00123     -0.00326*    -0.00508**   -0.00670*    -0.00743*    -0.00901*  
+           (0.00112)    (0.00153)    (0.00193)    (0.00285)    (0.00354)    (0.00428)   
+
+control_1     -0.189***    -0.316***    -0.413***    -0.503***    -0.580***    -0.645***
+            (0.0185)     (0.0249)     (0.0337)     (0.0376)     (0.0373)     (0.0357)   
+
+control_2    -0.0961***    -0.143***    -0.196***    -0.245***    -0.287***    -0.330***
+            (0.0148)     (0.0212)     (0.0260)     (0.0256)     (0.0241)     (0.0202)   
+----------------------------------------------------------------------------------------
+N            7976426      7976426      7976426      7976426      7976426      7976426   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+(38,887,770 observations deleted)
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     15.37   N = 2517308
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     15.37   N = 2517308
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     15.37   N = 2517308
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     15.37   N = 2517308
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     15.37   N = 2517308
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     15.37   N = 2517308
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           income_~0    income~d1    income~d2    income~d3    income~d4    income~d5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -9.393       -34.22       -27.40       -103.2       -108.3       -178.8   
+             (22.61)      (23.04)      (37.44)      (64.18)      (77.06)      (101.3)   
+
+shock_l1    -0.00538     -0.00180     -0.00338      -0.0106      -0.0187      -0.0350*  
+           (0.00374)    (0.00442)    (0.00666)    (0.00732)     (0.0105)     (0.0139)   
+
+shock_l2     0.00486      0.00496      0.00479     -0.00767      -0.0192*     -0.0204   
+           (0.00349)    (0.00304)    (0.00308)    (0.00570)    (0.00863)     (0.0119)   
+
+shock_l3     0.00319      0.00159     -0.00342      -0.0214*     -0.0187      -0.0219   
+           (0.00363)    (0.00301)    (0.00612)    (0.00963)     (0.0107)     (0.0129)   
+
+control_1     -0.224***    -0.345***    -0.422***    -0.476***    -0.522***    -0.555***
+            (0.0216)     (0.0231)     (0.0214)     (0.0198)     (0.0168)     (0.0168)   
+
+control_2     -0.144***    -0.196***    -0.241***    -0.273***    -0.297***    -0.317***
+            (0.0133)     (0.0162)     (0.0177)     (0.0160)     (0.0147)     (0.0130)   
+----------------------------------------------------------------------------------------
+N            2517308      2517308      2517308      2517308      2517308      2517308   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+(38,887,780 observations deleted)
+(est1 stored)
+horizon 0: first-stage F (Kleibergen-Paap rk Wald) =     14.59   N = 1549751
+(est2 stored)
+horizon 1: first-stage F (Kleibergen-Paap rk Wald) =     14.59   N = 1549751
+(est3 stored)
+horizon 2: first-stage F (Kleibergen-Paap rk Wald) =     14.59   N = 1549751
+(est4 stored)
+horizon 3: first-stage F (Kleibergen-Paap rk Wald) =     14.59   N = 1549751
+(est5 stored)
+horizon 4: first-stage F (Kleibergen-Paap rk Wald) =     14.59   N = 1549751
+(est6 stored)
+horizon 5: first-stage F (Kleibergen-Paap rk Wald) =     14.59   N = 1549751
+
+----------------------------------------------------------------------------------------
+                 (1)          (2)          (3)          (4)          (5)          (6)   
+           income_~0    income~d1    income~d2    income~d3    income~d4    income~d5   
+----------------------------------------------------------------------------------------
+d_ir_eoy      -41.59       -160.2       -40.70       -171.0       -92.51       -256.1*  
+             (139.4)      (91.00)      (81.24)      (104.5)      (109.0)      (130.3)   
+
+shock_l1     -0.0368**    -0.0244     -0.00638     -0.00641      -0.0185      -0.0695***
+            (0.0130)     (0.0139)     (0.0118)    (0.00903)     (0.0149)     (0.0208)   
+
+shock_l2     0.00855       0.0182       0.0400***    0.0156      -0.0215      -0.0299   
+            (0.0124)     (0.0121)     (0.0111)     (0.0112)     (0.0168)     (0.0171)   
+
+shock_l3      0.0221       0.0340       0.0360***   -0.0200      -0.0133      -0.0182   
+            (0.0235)     (0.0187)    (0.00865)     (0.0185)     (0.0128)     (0.0148)   
+
+control_1     -0.329***    -0.476***    -0.556***    -0.588***    -0.621***    -0.638***
+            (0.0329)     (0.0304)     (0.0228)     (0.0166)     (0.0133)     (0.0169)   
+
+control_2     -0.227***    -0.310***    -0.356***    -0.380***    -0.396***    -0.408***
+            (0.0200)     (0.0205)     (0.0183)     (0.0154)     (0.0162)     (0.0161)   
+----------------------------------------------------------------------------------------
+N            1549751      1549751      1549751      1549751      1549751      1549751   
+----------------------------------------------------------------------------------------
+Standard errors in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+
+. 
+. * delete log-differences
+. drop ${dependent_var}_d*
+
+. drop control_*  
+
+. drop balance
+
+.         
+. ********************************************************************************
+. * output estimates into excel file      
+. 
+. putexcel set ${w5_tables}/${version}_micro_${group_type}groups_dti_${dependent_var}${sample}_r${robust}_b${balance}_c${csample}_${shock_name}_iv.xlsx, replace
+note: file will be replaced when the first putexcel command is issued.
+
+. * first column contains point estimates (for h=0,1,...,NN)
+. putexcel A1 = matrix(res)
+file <output folder>/v3A_micro_DTI622groups_dti_income_total_nom_r0_b1_c1_romer_iv.xlsx saved
+
+. * second column contains standard errors        
+. putexcel B1 = matrix(seRes)
+file <output folder>/v3A_micro_DTI622groups_dti_income_total_nom_r0_b1_c1_romer_iv.xlsx saved
+
+. * third column contains sample size
+. putexcel C1 = matrix(NObs)
+file <output folder>/v3A_micro_DTI622groups_dti_income_total_nom_r0_b1_c1_romer_iv.xlsx saved
+
+. 
+. * same estimates as comma-separated text (columns: estimate, standard error, observations)
+. write_lp_csv "${w5_tables}/${version}_micro_${group_type}groups_dti_${dependent_var}${sample}_r${robust}_b${balance}_c${csample}_${shock_name}_iv.csv"
+(file <output folder>/v3A_micro_DTI622groups_dti_income_total_nom_r0_b1_c1_romer_iv.csv not found)
+
+. 
+. 
+. ********************************************************************************
+. * close log file
+. 
+. log close
+      name:  <unnamed>
+       log:  <output folder>/log/v3A_micro_DTI622groups_dti_income_total_nom_r0_b1_c1_romer_iv.log
+  log type:  text
+ closed on:   6 Oct 2026, 15:48:49
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
